@@ -41,66 +41,124 @@
  */
   const express = require('express');
   const bodyParser = require('body-parser');
-  
+  const fs = require('fs');
+  const path = require('path');
   const app = express();
   
   app.use(bodyParser.json());
 
-  let todoList = [];
+  function findIndex(arr, index) {
+    for(let i = 0; i < arr.length; i++) {
+      if (arr[i].id === index) return i;
+    }
 
-  app.get('/todos', (req, res) => {
-    res.json(todoList);
+    return -1;
+  }
+
+  function removeTodo(arr, index) {
+    let newTodoList = [];
+    const todoIndex = findIndex(arr, index);
+    
+    if(todoIndex === -1) return todoIndex;
+    
+    for(let i = 0; i < arr.length; i++) {
+      if (i != todoIndex) {
+        newTodoList.push(arr[i]);
+      }
+    }
+
+    return newTodoList;
+  }
+
+  app.get('/todos', async (req, res) => {
+    fs.readFile('./todos.json', 'utf8', (err, file) => {
+      if (err) throw err;
+
+      res.json(JSON.parse(file));
+    });
   });
 
   app.get('/todos/:id', (req, res) => {
-    const todo = todoList.find(todo => todo.id === parseInt(req.params.id));
+    fs.readFile('./todos.json', 'utf8', (err, file) => {
+      if (err) throw err;
 
-    if(!todo) {
-      res.status(404).send();
-    } else {
-      res.json(todo);
-    }
+      const todoList = JSON.parse(file);
+      const index = findIndex(todoList, parseInt(req.params.id));
+
+      if(index === -1) {
+        res.status(404).send();
+      } else {
+        res.json(todoList[index]);
+      }
+    });
   });
 
-  app.post('/todos', (req, res) => {
-    let id = (todoList.length == 0) ? 1 : id++;
+  app.post('/todos', async (req, res) => {
+    fs.readFile('./todos.json', 'utf8', (err, file) => {
+      if (err) throw err;
 
-    todoList.push({
-      id,
-      title: req.body.title,
-      description: req.body.description,
-      completed: req.body.completed
+      let todoList = JSON.parse(file);
+      const id = todoList.length + 1;
+
+      todoList.push({
+        id,
+        title: req.body.title,
+        description: req.body.description
+      });
+
+      fs.writeFile('./todos.json', JSON.stringify(todoList), (err) => {
+        if (err) throw err;
+        res.status(201).json(id);
+      });
     });
-
-    res.status(201).json({id});
-  })
+  });
 
   app.put('/todos/:id', (req, res) => {
-    const todoIndex = todoList.findIndex(data => data.id === parseInt(req.params.id));
+    fs.readFile('./todos.json', 'utf8', (err, file) => {
+      if (err) throw err;
 
-    if(todoIndex >= 0) {
-      todoList[todoIndex].title = req.body.title;
-      todoList[todoIndex].description = req.body.description;
+      const todoList = JSON.parse(file);
+      const index = findIndex(todoList, parseInt(req.params.id));
 
-      res.json();
-    } else {
-      res.status(404).send();
-    }
+      if (index === -1) {
+        res.status(404).send();
+      } else {
+        todoList[index].title = req.body.title;
+        todoList[index].description = req.body.description;
+         
+        fs.writeFile('./todos.json', JSON.stringify(todoList), (err) => {
+          if (err) throw err;
+          res.status(200).json(todoList);
+        });
+      }
+    });
   });
 
   app.delete('/todos/:id', (req, res) => {
-    const todoIndex = todoList.findIndex(data => data.id === parseInt(req.params.id));
+    fs.readFile('./todos.json', 'utf8', (err, file) => {
+      if (err) throw err;
+      
+      const newTodoList = removeTodo(JSON.parse(file), parseInt(req.params.id));
 
-    if(todoIndex >= 0) {
-      todoList.splice(index, 1);
-      res.status(200).send();
-    } else {
-      res.status(404).send();
-    } 
+      if(newTodoList === -1) {
+        res.status(404).send();
+      } else {
+        fs.writeFile('./todos.json', JSON.stringify(newTodoList), (err) => {
+          if (err) throw err;
+          res.status(200).send();
+        });   
+      }
+    });
   });
   
   app.all('*', (req, res, next) => {
     res.status(404).json('Route not found');
+  });
+
+  // Start the server on port 3000
+  const PORT = 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
   });
   
   module.exports = app;
