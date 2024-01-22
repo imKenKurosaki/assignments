@@ -13,8 +13,20 @@ const jwtPassword = 'secret';
  *                        Returns null if the username is not a valid email or
  *                        the password does not meet the length requirement.
  */
+const z = require("zod");
+const signJwtSchema = z.object({
+    username: z.string().email({ message: "Email is invalid" }),
+    password: z.string().length(6, { message: "Password must be exactly 6 characters long" })
+});
+
 function signJwt(username, password) {
     // Your code here
+    if (!signJwtSchema.safeParse({ username, password }).success) {
+        return null;
+    }
+
+    const token = jwt.sign({ username }, jwtPassword);
+    return token;
 }
 
 /**
@@ -27,6 +39,10 @@ function signJwt(username, password) {
  */
 function verifyJwt(token) {
     // Your code here
+    return jwt.verify(token, jwtPassword, (err, decoded) => {
+        if (err) return false;
+        return true;
+    });
 }
 
 /**
@@ -38,12 +54,14 @@ function verifyJwt(token) {
  */
 function decodeJwt(token) {
     // Your code here
+    const decoded = jwt.decode(token);
+    if (!decoded) return false;
+    return true;
 }
 
-
 module.exports = {
-  signJwt,
-  verifyJwt,
-  decodeJwt,
-  jwtPassword,
+    signJwt,
+    verifyJwt,
+    decodeJwt,
+    jwtPassword,
 };
