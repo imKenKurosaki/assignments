@@ -1,0 +1,40 @@
+<html lang="en">
+<head>
+    <title>03-assignment week 7</title>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        // 1. Create an object for react element that has html anchor data.
+        const reactElement = {
+            type: "a",
+            props: {
+                href: "https://www.google.com/",
+                target: "blank",
+                children: "Click me to Visit Google"
+            }
+        }
+
+        // 2. Create a function that generates html code from reactElement and returns the final html tag.
+        function generateHtml(reactElement) {
+            const {type, props} = reactElement;
+            let attribute = "";
+
+            Object.keys(reactElement.props).forEach(key => {
+                attribute += `${key}="${reactElement.props[key]}"`;
+            })
+      
+            const htmlCode = `<${type} ${attribute}>${props.children}</${type}`;
+            return htmlCode;
+        }
+
+        // 3. Create a function customRender that takes in the object and the path of html where it will be rendered
+        function customRender(reactElement, path) {
+            const htmlCode = generateHtml(reactElement);
+            document.getElementById(`${path}`).innerHTML = htmlCode;
+        }
+
+        customRender(reactElement, "root");
+    </script>
+</body>
+</html>
