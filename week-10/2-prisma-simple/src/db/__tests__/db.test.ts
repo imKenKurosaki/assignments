@@ -5,21 +5,35 @@ import { dropTables } from '../setup';
 
 const prisma = new PrismaClient();
 
+type User = {
+  id: string;
+  username: string;
+  name: string;
+}
+
+type Todo = {
+  title: string;
+  description: string | null;
+  done: boolean;
+  id: string;
+}
+
 beforeAll(async () => {
+    await prisma.$connect();
     await dropTables();
 });
 
 afterAll(async () => {
-
+  await prisma.$disconnect();
 });
 
-describe('User Database Operations', () => {
+describe('User Database Operations',() => {
     test('createUser inserts a new user into the database', async () => {
         const username = 'testuser';
         const password = 'testpass'; // Consider using hashed passwords in actual tests
         const name = 'Test User';
 
-        const user = await createUser(username, password, name);
+        const user: User = await createUser(username, password, name);
 
         expect(user).toHaveProperty('username', username);
         expect(user).toHaveProperty('name', name);
@@ -28,8 +42,8 @@ describe('User Database Operations', () => {
 
     test('getUser retrieves a user by ID', async () => {
         // Create a user first to ensure there is a user to retrieve
-        const newUser = await createUser('newuser', 'password', 'New User');
-        const user = await getUser(newUser.id);
+        const newUser: User = await createUser('newuser', 'password', 'New User');
+        const user: User | null = await getUser(newUser.id);
 
         expect(user).toHaveProperty('id', newUser.id);
         expect(user).toHaveProperty('username', 'newuser');
@@ -38,18 +52,18 @@ describe('User Database Operations', () => {
 });
 
 describe('Todo Operations', () => {
-    let userId: number;
+    let userId: string;
 
     beforeAll(async () => {
       // Create a user for todos
-      const user = await createUser('todouser', 'password', 'Todo User');
+      const user: User = await createUser('todouser', 'password', 'Todo User');
       userId = user.id;
     });
 
     test('createTodo inserts a new todo for a user', async () => {
       const title = 'Test Todo';
       const description = 'Test Description';
-      const todo = await createTodo(userId, title, description);
+      const todo: Todo = await createTodo(userId, title, description);
 
       expect(todo).toHaveProperty('title', title);
       expect(todo).toHaveProperty('description', description);
@@ -57,8 +71,8 @@ describe('Todo Operations', () => {
     });
 
     test('updateTodo marks a todo as done', async () => {
-      const todo = await createTodo(userId, 'Update Test', 'To be updated');
-      const updatedTodo = await updateTodo(todo.id);
+      const todo: Todo = await createTodo(userId, 'Update Test', 'To be updated');
+      const updatedTodo: Todo = await updateTodo(todo.id);
 
       expect(updatedTodo).toHaveProperty('done', true);
     });
@@ -66,11 +80,11 @@ describe('Todo Operations', () => {
     test('getTodos retrieves all todos for a user', async () => {
       // Assuming createTodo adds to the todos for the user
       await createTodo(userId, 'Another Todo', 'Another description');
-      const todos = await getTodos(userId);
+      const todos: Array<Todo> = await getTodos(userId);
 
       expect(todos.length).toBeGreaterThan(0);
       todos.forEach(todo => {
-        expect(todo).toHaveProperty('userId', userId);
+        expect(todo).toHaveProperty('user_id', userId);
       });
-    });
+    }); 
 });
