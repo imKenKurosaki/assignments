@@ -30,5 +30,5 @@ Actions: Update the specified blog post if the authenticated user is the owner. 
  - DELETE /posts/:id - Delete a blog post by ID.
 Actions: Delete the specified blog post if the authenticated user is the owner. Require authentication.
 
-## Database
+## Database 
 Try using `prisma` as the ORM and Postgres as the provider.
